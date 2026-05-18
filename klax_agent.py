@@ -4,12 +4,9 @@ KLAX Temperature Database Agent — GitHub Actions version
 Runs on GitHub's servers via cron schedule. No local machine needed.
 
 Schedule (defined in workflow YAML):
-  - 16:30 UTC = 9:30 AM PDT  → fetch NWS forecast
+  - 16:30 UTC = 9:30 AM PDT  → fetch NWS forecast for today
   - 20:00 UTC = 1:00 PM PDT  → fetch CF6 observed (first check)
-  - 23:00 UTC = 4:00 PM PDT  → fetch CF6 observed (second check, catches late updates)
-
-Each run does its job and exits. GitHub Actions handles the scheduling.
-Database lives in data/klax_database.json, committed back to the repo.
+  - 23:00 UTC = 4:00 PM PDT  → fetch CF6 observed (second check)
 """
 
 import json
@@ -17,12 +14,12 @@ import os
 import re
 import sys
 import urllib.request
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-PDT      = ZoneInfo("America/Los_Angeles")
-DB_FILE  = Path("data/klax_database.json")
+PDT     = ZoneInfo("America/Los_Angeles")
+DB_FILE = Path("data/klax_database.json")
 DB_FILE.parent.mkdir(exist_ok=True)
 
 KLAX_LAT = 33.9425
@@ -31,7 +28,6 @@ CF6_URL  = "https://tgftp.nws.noaa.gov/data/raw/cx/cxus56.klox.cf6.lax.txt"
 
 def log(msg): print(f"[{datetime.now(PDT).strftime('%H:%M:%S PDT')}] {msg}", flush=True)
 
-# ── Database ──────────────────────────────────────────────────────────────
 def load_db() -> dict:
     if DB_FILE.exists():
         try:
@@ -44,7 +40,6 @@ def save_db(db: dict):
     DB_FILE.write_text(json.dumps(db, indent=2, sort_keys=True))
     log(f"Database saved ({len(db)} entries)")
 
-# ── HTTP ──────────────────────────────────────────────────────────────────
 def fetch(url: str, timeout: int = 20) -> str:
     req = urllib.request.Request(url, headers={
         "User-Agent": "KLAX-GHActions/2.0 (research)",
@@ -53,9 +48,7 @@ def fetch(url: str, timeout: int = 20) -> str:
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read().decode("utf-8", errors="replace")
 
-# ── NWS forecast ──────────────────────────────────────────────────────────
 def get_forecast_url() -> str:
-    """Discover verified gridpoint for KLAX coordinates."""
     try:
         raw  = fetch(f"https://api.weather.gov/points/{KLAX_LAT},{KLAX_LON}")
         data = json.loads(raw)
@@ -66,36 +59,65 @@ def get_forecast_url() -> str:
         log(f"Gridpoint verified: {gid}/{gx},{gy}")
         return url
     except Exception as e:
-        log(f"Gridpoint discovery failed: {e} — using fallback")
-        return "https://api.weather.gov/gridpoints/LOX/144,28/forecast"
+        log(f"Gridpoint discovery failed: {e} — using fallback LOX/148,41")
+        return "https://api.weather.gov/gridpoints/LOX/148,41/forecast"
 
-def fetch_forecast(date_str: str) -> dict | None:
+def fetch_forecast(target_date: str) -> dict | None:
+    """
+    Fetches NWS high temp forecast for target_date.
+    If the daytime period for today has expired (after ~6 PM),
+    the NWS API rolls forward — we accept the next available
+    daytime period and note the actual date it covers.
+    """
     url = get_forecast_url()
     try:
         raw  = fetch(url)
         data = json.loads(raw)
-        for period in data.get("properties", {}).get("periods", []):
+        periods = data.get("properties", {}).get("periods", [])
+
+        # First pass: try to find exact date match
+        for period in periods:
             if not period.get("isDaytime"):
                 continue
-            if period["startTime"][:10] == date_str:
+            if period["startTime"][:10] == target_date:
                 fcst  = period["temperature"]
                 units = period.get("temperatureUnit", "F")
                 if units != "F":
                     log(f"ERROR: unexpected unit {units}")
                     return None
-                log(f"NWS forecast for {date_str}: {fcst}°F ('{period['name']}')")
+                log(f"NWS forecast for {target_date}: {fcst}°F ('{period['name']}')")
                 return {
                     "fcst":        fcst,
                     "fcst_src":    "nws-api",
                     "fcst_time":   datetime.now(PDT).strftime("%H:%M PDT"),
                     "fcst_period": period["name"],
                 }
-        log(f"No daytime period found for {date_str}")
+
+        # Second pass: today's daytime period has expired (past ~6 PM)
+        # Take the FIRST available daytime period and log it for its actual date
+        for period in periods:
+            if not period.get("isDaytime"):
+                continue
+            actual_date = period["startTime"][:10]
+            fcst        = period["temperature"]
+            units       = period.get("temperatureUnit", "F")
+            if units != "F":
+                continue
+            log(f"Today's period expired — using next daytime: "
+                f"{actual_date} = {fcst}°F ('{period['name']}')")
+            return {
+                "fcst":        fcst,
+                "fcst_src":    "nws-api",
+                "fcst_time":   datetime.now(PDT).strftime("%H:%M PDT"),
+                "fcst_period": period["name"],
+                "fcst_date":   actual_date,  # actual date this forecast covers
+            }
+
+        log("No daytime periods found at all in NWS response")
     except Exception as e:
         log(f"Forecast fetch failed: {e}")
     return None
 
-# ── CF6 observed ──────────────────────────────────────────────────────────
 def parse_cf6(text: str) -> dict:
     yr_m = re.search(r"YEAR:\s+(\d{4})", text)
     mo_m = re.search(r"MONTH:\s+(\w+)", text)
@@ -130,9 +152,8 @@ def fetch_cf6() -> dict:
         log(f"CF6 fetch failed: {e}")
     return {}
 
-# ── Main ──────────────────────────────────────────────────────────────────
 def main():
-    job = os.environ.get("KLAX_JOB", "forecast")  # "forecast" or "observed"
+    job       = os.environ.get("KLAX_JOB", "forecast")
     now_pdt   = datetime.now(PDT)
     today_str = now_pdt.strftime("%Y-%m-%d")
 
@@ -141,21 +162,23 @@ def main():
 
     if job == "forecast":
         log("Running: NWS forecast fetch")
-        # Don't overwrite if already have a real entry for today
-        existing = db.get(today_str, {})
-        if existing.get("fcst_src") in ("nws-api",):
-            log(f"Forecast already logged for {today_str}: {existing['fcst']}°F — skipping")
-        else:
-            result = fetch_forecast(today_str)
-            if result:
-                if today_str not in db:
-                    db[today_str] = {}
-                db[today_str].update(result)
-                save_db(db)
-                log(f"✓ Forecast saved: {result['fcst']}°F")
+        result = fetch_forecast(today_str)
+        if result:
+            # Use fcst_date if present (when today's period expired), else today
+            save_date = result.pop("fcst_date", today_str)
+            if save_date not in db:
+                db[save_date] = {}
+            # Don't overwrite an existing real entry for that date
+            if db[save_date].get("fcst_src") == "nws-api":
+                log(f"Forecast already logged for {save_date}: "
+                    f"{db[save_date]['fcst']}°F — skipping")
             else:
-                log("✗ Could not retrieve forecast")
-                sys.exit(1)
+                db[save_date].update(result)
+                save_db(db)
+                log(f"✓ Forecast saved for {save_date}: {result['fcst']}°F")
+        else:
+            log("✗ Could not retrieve forecast")
+            sys.exit(1)
 
     elif job == "observed":
         log("Running: CF6LAX observed high fetch")
@@ -168,14 +191,15 @@ def main():
             if ds not in db:
                 db[ds] = {}
             if db[ds].get("obs") != tmax or db[ds].get("obs_src") != "cf6":
+                old = db[ds].get("obs", "—")
                 db[ds]["obs"]      = tmax
                 db[ds]["obs_src"]  = "cf6"
                 db[ds]["obs_time"] = now_pdt.strftime("%H:%M PDT")
-                log(f"  {ds}: {tmax}°F (was {db[ds].get('obs','—')})")
+                log(f"  {ds}: {tmax}°F (was {old})")
                 changed = True
         if changed:
             save_db(db)
-            log(f"✓ Observed highs updated")
+            log("✓ Observed highs updated")
         else:
             log("No changes to observed data")
 
