@@ -1,0 +1,85 @@
+# KLAX Temperature Database Agent
+# Runs on GitHub's servers — no local machine or sleep issues.
+#
+# Schedule (UTC → PDT = UTC-7):
+#   16:30 UTC = 9:30 AM PDT  → fetch NWS forecast for today
+#   20:00 UTC = 1:00 PM PDT  → fetch CF6 observed (first check)
+#   23:00 UTC = 4:00 PM PDT  → fetch CF6 observed (second check)
+#
+# After each run, the database JSON is committed back to the repo.
+# View the database at: data/klax_database.json
+
+name: KLAX Temperature Agent
+
+on:
+  schedule:
+    # 9:30 AM PDT — NWS forecast fetch
+    - cron: '30 16 * * *'
+    # 1:00 PM PDT — CF6 observed (first check, CF6 usually publishes ~noon)
+    - cron: '0 20 * * *'
+    # 4:00 PM PDT — CF6 observed (second check, catches late updates)
+    - cron: '0 23 * * *'
+
+  # Allow manual trigger from GitHub UI for testing
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which job to run'
+        required: true
+        default: 'forecast'
+        type: choice
+        options:
+          - forecast
+          - observed
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed to commit database back to repo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Determine which job to run
+        id: job
+        run: |
+          # Figure out which job based on current UTC hour, or use manual input
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "job=${{ github.event.inputs.job }}" >> $GITHUB_OUTPUT
+          else
+            HOUR=$(date -u +%H)
+            MINUTE=$(date -u +%M)
+            if [ "$HOUR" = "16" ] && [ "$MINUTE" -ge "30" ]; then
+              echo "job=forecast" >> $GITHUB_OUTPUT
+            else
+              echo "job=observed" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Run KLAX agent
+        env:
+          KLAX_JOB: ${{ steps.job.outputs.job }}
+        run: python klax_agent.py
+
+      - name: Commit updated database
+        run: |
+          git config user.name  "KLAX Agent"
+          git config user.email "klax-agent@github-actions"
+          git add data/klax_database.json
+          # Only commit if there are actual changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            TIMESTAMP=$(TZ="America/Los_Angeles" date "+%Y-%m-%d %H:%M PDT")
+            JOB="${{ steps.job.outputs.job }}"
+            git commit -m "KLAX auto-update: ${JOB} @ ${TIMESTAMP}"
+            git push
+            echo "✓ Database committed to repo"
+          fi
