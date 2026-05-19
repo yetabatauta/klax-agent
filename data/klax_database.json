@@ -126,7 +126,8 @@
     "fcst_src": "nws-api",
     "fcst_time": "20:46 PDT",
     "note": "First real logged forecast. Obs pending CF6 afternoon update.",
-    "obs": null,
-    "obs_src": "pending"
+    "obs": 71,
+    "obs_src": "cf6",
+    "obs_time": "14:08 PDT"
   }
 }
