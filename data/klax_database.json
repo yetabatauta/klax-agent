@@ -130,6 +130,11 @@
     "obs_src": "cf6",
     "obs_time": "14:08 PDT"
   },
+  "2026-05-19": {
+    "obs": 73.9,
+    "obs_src": "nws-asos",
+    "obs_time": "19:42 PDT"
+  },
   "2026-05-20": {
     "fcst": 74,
     "fcst_period": "Wednesday",
