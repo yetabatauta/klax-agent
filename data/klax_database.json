@@ -151,15 +151,15 @@
     "fcst_time": "20:46 PDT",
     "fcst_unit": "C",
     "note": "Forecast from evening test run \u2014 day-1 not day-0. Obs pending.",
-    "obs": 23.3,
+    "obs": 22.2,
     "obs_src": "nws-asos",
-    "obs_time": "03:36 PDT",
+    "obs_time": "15:15 PDT",
     "obs_unit": "C"
   },
   "2026-05-20": {
-    "obs": 23,
+    "obs": 25,
     "obs_src": "nws-asos",
-    "obs_time": "03:36 PDT",
+    "obs_time": "15:15 PDT",
     "obs_unit": "C"
   }
 }
