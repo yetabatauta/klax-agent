@@ -1,21 +1,165 @@
 {
-  "2026-05-01": {"obs": 21.1, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-02": {"obs": 20.0, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-03": {"obs": 19.4, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-04": {"obs": 20.0, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-05": {"obs": 18.9, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-06": {"obs": 20.0, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-07": {"obs": 20.0, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-08": {"obs": 20.6, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-09": {"obs": 20.6, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-10": {"obs": 21.1, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-11": {"obs": 19.4, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-12": {"obs": 19.4, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-13": {"obs": 21.1, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-14": {"obs": 21.1, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-15": {"obs": 20.0, "obs_unit": "C", "obs_src": "cli", "fcst": null, "fcst_src": "unknown", "note": "Observed confirmed NWS CLI: max 68F at 3:26 PM PDT. Forecast not retrievable."},
-  "2026-05-16": {"obs": 21.1, "obs_unit": "C", "obs_src": "cf6", "fcst": null, "fcst_src": "unknown", "note": "Observed verified CF6LAX. Forecast not retrievable."},
-  "2026-05-17": {"obs": null, "obs_src": "pending", "fcst": null, "fcst_src": "unknown", "note": "Agent not yet running. Forecast not retrievable."},
-  "2026-05-18": {"obs": null, "obs_src": "pending", "fcst": 21.7, "fcst_unit": "C", "fcst_src": "nws-api", "fcst_time": "20:46 PDT", "fcst_period": "Monday", "note": "Forecast from evening test run — day-1 not day-0. Obs pending."},
-  "2026-05-19": {"obs": null, "obs_src": "pending", "fcst": 21.7, "fcst_unit": "C", "fcst_src": "nws-api", "fcst_time": "20:46 PDT", "fcst_period": "Tuesday", "note": "Forecast from evening test run — day-1 not day-0. Obs pending."}
+  "2026-05-01": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 21.1,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-02": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 20.0,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-03": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 19.4,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-04": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 20.0,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-05": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 18.9,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-06": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 20.0,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-07": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 20.0,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-08": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 20.6,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-09": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 20.6,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-10": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 21.1,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-11": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 19.4,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-12": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 19.4,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-13": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 21.1,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-14": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 21.1,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-15": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed confirmed NWS CLI: max 68F at 3:26 PM PDT. Forecast not retrievable.",
+    "obs": 20.0,
+    "obs_src": "cli",
+    "obs_unit": "C"
+  },
+  "2026-05-16": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Observed verified CF6LAX. Forecast not retrievable.",
+    "obs": 21.1,
+    "obs_src": "cf6",
+    "obs_unit": "C"
+  },
+  "2026-05-17": {
+    "fcst": null,
+    "fcst_src": "unknown",
+    "note": "Agent not yet running. Forecast not retrievable.",
+    "obs": null,
+    "obs_src": "pending"
+  },
+  "2026-05-18": {
+    "fcst": 21.7,
+    "fcst_period": "Monday",
+    "fcst_src": "nws-api",
+    "fcst_time": "20:46 PDT",
+    "fcst_unit": "C",
+    "note": "Forecast from evening test run \u2014 day-1 not day-0. Obs pending.",
+    "obs": null,
+    "obs_src": "pending"
+  },
+  "2026-05-19": {
+    "fcst": 21.7,
+    "fcst_period": "Tuesday",
+    "fcst_src": "nws-api",
+    "fcst_time": "20:46 PDT",
+    "fcst_unit": "C",
+    "note": "Forecast from evening test run \u2014 day-1 not day-0. Obs pending.",
+    "obs": 23.3,
+    "obs_src": "nws-asos",
+    "obs_time": "03:36 PDT",
+    "obs_unit": "C"
+  },
+  "2026-05-20": {
+    "obs": 23,
+    "obs_src": "nws-asos",
+    "obs_time": "03:36 PDT",
+    "obs_unit": "C"
+  }
 }
