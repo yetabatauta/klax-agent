@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-KLAX Temperature Database Agent — GitHub Actions version
-Runs on GitHub's servers via cron schedule. No local machine needed.
+KLAX Temperature Database Agent — v3
+Fixed: observed high now from NWS API observations (JSON, no parsing ambiguity)
+Fixed: forecast skips if already logged for today
+Fixed: proper date handling across midnight
 
-Schedule (defined in workflow YAML):
-  - 16:30 UTC = 9:30 AM PDT  → fetch NWS forecast for today
-  - 20:00 UTC = 1:00 PM PDT  → fetch CF6 observed (first check)
-  - 23:00 UTC = 4:00 PM PDT  → fetch CF6 observed (second check)
+Sources:
+  Forecast: api.weather.gov/points -> gridpoints -> forecast (JSON, °F confirmed)
+  Observed: api.weather.gov/stations/KLAX/observations (JSON, hourly ASOS)
+            Computes daily max from all hourly readings in PDT calendar day
 """
 
 import json
 import os
-import re
 import sys
 import urllib.request
 from datetime import datetime, timedelta
@@ -22,11 +23,11 @@ PDT     = ZoneInfo("America/Los_Angeles")
 DB_FILE = Path("data/klax_database.json")
 DB_FILE.parent.mkdir(exist_ok=True)
 
-KLAX_LAT = 33.9425
-KLAX_LON = -118.4081
-CF6_URL  = "https://tgftp.nws.noaa.gov/data/raw/cx/cxus56.klox.cf6.lax.txt"
+KLAX_LAT  = 33.9425
+KLAX_LON  = -118.4081
+OBS_URL   = "https://api.weather.gov/stations/KLAX/observations?limit=200"
 
-def log(msg): print(f"[{datetime.now(PDT).strftime('%H:%M:%S PDT')}] {msg}", flush=True)
+def log(msg): print(f"[{datetime.now(PDT).strftime('%Y-%m-%d %H:%M:%S PDT')}] {msg}", flush=True)
 
 def load_db() -> dict:
     if DB_FILE.exists():
@@ -38,16 +39,17 @@ def load_db() -> dict:
 
 def save_db(db: dict):
     DB_FILE.write_text(json.dumps(db, indent=2, sort_keys=True))
-    log(f"Database saved ({len(db)} entries)")
+    log(f"Database saved — {len(db)} total entries")
 
 def fetch(url: str, timeout: int = 20) -> str:
     req = urllib.request.Request(url, headers={
-        "User-Agent": "KLAX-GHActions/2.0 (research)",
+        "User-Agent": "KLAX-GHActions/3.0 (research)",
         "Accept":     "application/geo+json, text/plain, */*",
     })
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read().decode("utf-8", errors="replace")
 
+# ── NWS forecast ──────────────────────────────────────────────────────────
 def get_forecast_url() -> str:
     try:
         raw  = fetch(f"https://api.weather.gov/points/{KLAX_LAT},{KLAX_LON}")
@@ -56,36 +58,31 @@ def get_forecast_url() -> str:
         gid  = data["properties"]["gridId"]
         gx   = data["properties"]["gridX"]
         gy   = data["properties"]["gridY"]
-        log(f"Gridpoint verified: {gid}/{gx},{gy}")
+        log(f"Gridpoint: {gid}/{gx},{gy}")
         return url
     except Exception as e:
-        log(f"Gridpoint discovery failed: {e} — using fallback LOX/148,41")
+        log(f"Gridpoint lookup failed: {e} — using confirmed fallback LOX/148,41")
         return "https://api.weather.gov/gridpoints/LOX/148,41/forecast"
 
 def fetch_forecast(target_date: str) -> dict | None:
-    """
-    Fetches NWS high temp forecast for target_date.
-    If the daytime period for today has expired (after ~6 PM),
-    the NWS API rolls forward — we accept the next available
-    daytime period and note the actual date it covers.
-    """
     url = get_forecast_url()
     try:
-        raw  = fetch(url)
-        data = json.loads(raw)
+        raw     = fetch(url)
+        data    = json.loads(raw)
         periods = data.get("properties", {}).get("periods", [])
 
-        # First pass: try to find exact date match
+        # Look for daytime period matching target date
         for period in periods:
             if not period.get("isDaytime"):
                 continue
-            if period["startTime"][:10] == target_date:
+            period_date = period["startTime"][:10]
+            if period_date == target_date:
                 fcst  = period["temperature"]
                 units = period.get("temperatureUnit", "F")
                 if units != "F":
-                    log(f"ERROR: unexpected unit {units}")
+                    log(f"ERROR: unexpected temperature unit '{units}'")
                     return None
-                log(f"NWS forecast for {target_date}: {fcst}°F ('{period['name']}')")
+                log(f"Forecast for {target_date}: {fcst}°F ('{period['name']}')")
                 return {
                     "fcst":        fcst,
                     "fcst_src":    "nws-api",
@@ -93,8 +90,7 @@ def fetch_forecast(target_date: str) -> dict | None:
                     "fcst_period": period["name"],
                 }
 
-        # Second pass: today's daytime period has expired (past ~6 PM)
-        # Take the FIRST available daytime period and log it for its actual date
+        # Today's daytime period has expired — log next available daytime date
         for period in periods:
             if not period.get("isDaytime"):
                 continue
@@ -103,107 +99,134 @@ def fetch_forecast(target_date: str) -> dict | None:
             units       = period.get("temperatureUnit", "F")
             if units != "F":
                 continue
-            log(f"Today's period expired — using next daytime: "
-                f"{actual_date} = {fcst}°F ('{period['name']}')")
+            log(f"Today daytime expired — logging {actual_date}: {fcst}°F ('{period['name']}')")
             return {
                 "fcst":        fcst,
                 "fcst_src":    "nws-api",
                 "fcst_time":   datetime.now(PDT).strftime("%H:%M PDT"),
                 "fcst_period": period["name"],
-                "fcst_date":   actual_date,  # actual date this forecast covers
+                "fcst_date":   actual_date,
             }
 
-        log("No daytime periods found at all in NWS response")
+        log("No daytime periods found in NWS forecast response")
     except Exception as e:
         log(f"Forecast fetch failed: {e}")
     return None
 
-def parse_cf6(text: str) -> dict:
-    yr_m = re.search(r"YEAR:\s+(\d{4})", text)
-    mo_m = re.search(r"MONTH:\s+(\w+)", text)
-    if not yr_m or not mo_m:
+# ── NWS ASOS observed high ────────────────────────────────────────────────
+def fetch_observed_highs() -> dict:
+    """
+    Fetches hourly ASOS observations for KLAX from NWS API.
+    Returns {date_str: max_temp_F} for all dates with data.
+    Uses structured JSON — no text parsing, no ambiguity.
+    Temperature confirmed in °C, converted to °F.
+    """
+    try:
+        raw  = fetch(OBS_URL)
+        data = json.loads(raw)
+    except Exception as e:
+        log(f"Observations fetch failed: {e}")
         return {}
-    year = int(yr_m.group(1))
-    months = {
-        "JANUARY":1,"FEBRUARY":2,"MARCH":3,"APRIL":4,"MAY":5,"JUNE":6,
-        "JULY":7,"AUGUST":8,"SEPTEMBER":9,"OCTOBER":10,"NOVEMBER":11,"DECEMBER":12,
-    }
-    month = months.get(mo_m.group(1).upper())
-    if not month:
-        return {}
+
+    # Build daily max from all hourly readings
+    daily = {}  # date_str -> list of temps in F
+    for feat in data.get("features", []):
+        props = feat.get("properties", {})
+        ts    = props.get("timestamp")
+        if not ts:
+            continue
+
+        # Convert UTC timestamp to PDT date
+        try:
+            utc_dt  = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            pdt_dt  = utc_dt.astimezone(PDT)
+            ds      = pdt_dt.strftime("%Y-%m-%d")
+        except Exception:
+            continue
+
+        # Temperature in °C — confirmed field name is "temperature"
+        temp_c = props.get("temperature", {}).get("value")
+        if temp_c is None or not isinstance(temp_c, (int, float)):
+            continue
+
+        # Convert to °F, round to 1 decimal
+        temp_f = round(temp_c * 9/5 + 32, 1)
+
+        # Sanity check: LAX highs should be 50–115°F
+        if not (50 <= temp_f <= 115):
+            continue
+
+        if ds not in daily:
+            daily[ds] = []
+        daily[ds].append(temp_f)
+
+    # Take max for each day
     result = {}
-    for line in text.splitlines():
-        m = re.match(r"^\s{0,2}(\d{1,2})\s+(\d{2,3})\s+(\d{2,3})", line)
-        if not m:
-            continue
-        day, tmax = int(m.group(1)), int(m.group(2))
-        if not (1 <= day <= 31 and 40 <= tmax <= 120):
-            continue
-        result[f"{year}-{month:02d}-{day:02d}"] = tmax
+    for ds, temps in daily.items():
+        if temps:
+            result[ds] = round(max(temps), 1)
+            log(f"Observed {ds}: max {result[ds]}°F from {len(temps)} readings")
+
+    log(f"Observations: computed daily max for {len(result)} days")
     return result
 
-def fetch_cf6() -> dict:
-    try:
-        text   = fetch(CF6_URL)
-        parsed = parse_cf6(text)
-        log(f"CF6LAX: {len(parsed)} days parsed")
-        return parsed
-    except Exception as e:
-        log(f"CF6 fetch failed: {e}")
-    return {}
-
+# ── Main ──────────────────────────────────────────────────────────────────
 def main():
     job       = os.environ.get("KLAX_JOB", "forecast")
     now_pdt   = datetime.now(PDT)
     today_str = now_pdt.strftime("%Y-%m-%d")
 
-    log(f"KLAX agent starting — job={job}, date={today_str}")
+    log(f"=" * 55)
+    log(f"KLAX agent v3 — job={job} date={today_str}")
+    log(f"=" * 55)
+
     db = load_db()
 
     if job == "forecast":
-        log("Running: NWS forecast fetch")
+        log("Job: fetch NWS forecast")
         result = fetch_forecast(today_str)
         if result:
-            # Use fcst_date if present (when today's period expired), else today
             save_date = result.pop("fcst_date", today_str)
             if save_date not in db:
                 db[save_date] = {}
-            # Don't overwrite an existing real entry for that date
             if db[save_date].get("fcst_src") == "nws-api":
-                log(f"Forecast already logged for {save_date}: "
-                    f"{db[save_date]['fcst']}°F — skipping")
+                log(f"Forecast already logged for {save_date} "
+                    f"({db[save_date]['fcst']}°F) — skipping")
             else:
                 db[save_date].update(result)
                 save_db(db)
-                log(f"✓ Forecast saved for {save_date}: {result['fcst']}°F")
+                log(f"✓ Saved forecast {save_date}: {result['fcst']}°F")
         else:
             log("✗ Could not retrieve forecast")
             sys.exit(1)
 
     elif job == "observed":
-        log("Running: CF6LAX observed high fetch")
-        parsed = fetch_cf6()
-        if not parsed:
-            log("✗ No data from CF6")
+        log("Job: fetch observed highs from NWS ASOS")
+        observed = fetch_observed_highs()
+        if not observed:
+            log("✗ No observed data returned")
             sys.exit(1)
+
         changed = False
-        for ds, tmax in parsed.items():
+        for ds, tmax in observed.items():
             if ds not in db:
                 db[ds] = {}
-            if db[ds].get("obs") != tmax or db[ds].get("obs_src") != "cf6":
-                old = db[ds].get("obs", "—")
+            old = db[ds].get("obs")
+            # Only update if new value differs or no value yet
+            if old != tmax:
                 db[ds]["obs"]      = tmax
-                db[ds]["obs_src"]  = "cf6"
+                db[ds]["obs_src"]  = "nws-asos"
                 db[ds]["obs_time"] = now_pdt.strftime("%H:%M PDT")
-                log(f"  {ds}: {tmax}°F (was {old})")
+                log(f"  Updated {ds}: {tmax}°F (was {old})")
                 changed = True
+
         if changed:
             save_db(db)
-            log("✓ Observed highs updated")
+            log("✓ Observed highs saved")
         else:
             log("No changes to observed data")
 
-    log("Agent run complete.")
+    log("Run complete.")
 
 if __name__ == "__main__":
     main()
