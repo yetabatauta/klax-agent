@@ -209,5 +209,11 @@
     "obs_src": "nws-asos",
     "obs_time": "15:23 PDT",
     "obs_unit": "C"
+  },
+  "2026-05-29": {
+    "obs": 16,
+    "obs_src": "nws-asos",
+    "obs_time": "04:45 PDT",
+    "obs_unit": "C"
   }
 }
