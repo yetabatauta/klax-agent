@@ -301,15 +301,15 @@
     "obs_unit": "C"
   },
   "2026-06-13": {
-    "obs": 22.2,
+    "obs": 17,
     "obs_src": "nws-asos",
-    "obs_time": "13:51 PDT",
+    "obs_time": "13:50 PDT",
     "obs_unit": "C"
   },
   "2026-06-14": {
-    "obs": 17,
+    "obs": 22,
     "obs_src": "nws-asos",
-    "obs_time": "03:38 PDT",
+    "obs_time": "13:50 PDT",
     "obs_unit": "C"
   }
 }
