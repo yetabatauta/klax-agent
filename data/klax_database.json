@@ -475,9 +475,15 @@
     "obs_unit": "C"
   },
   "2026-07-12": {
-    "obs": 25,
+    "obs": 21,
     "obs_src": "nws-asos",
-    "obs_time": "10:29 PDT",
+    "obs_time": "11:14 PDT",
+    "obs_unit": "C"
+  },
+  "2026-07-13": {
+    "obs": 23,
+    "obs_src": "nws-asos",
+    "obs_time": "11:14 PDT",
     "obs_unit": "C"
   }
 }
