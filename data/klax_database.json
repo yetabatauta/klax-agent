@@ -682,5 +682,12 @@
     "obs_src": "nws-asos",
     "obs_time": "13:21 PDT",
     "obs_unit": "C"
+  },
+  "2026-08-15": {
+    "fcst": 25.0,
+    "fcst_period": "Today",
+    "fcst_src": "nws-api",
+    "fcst_time": "09:45 PDT",
+    "fcst_unit": "C"
   }
 }
