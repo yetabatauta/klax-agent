@@ -678,9 +678,9 @@
     "obs_unit": "C"
   },
   "2026-08-14": {
-    "obs": 26,
+    "obs": 21,
     "obs_src": "nws-asos",
-    "obs_time": "13:21 PDT",
+    "obs_time": "13:12 PDT",
     "obs_unit": "C"
   },
   "2026-08-15": {
@@ -688,6 +688,10 @@
     "fcst_period": "Today",
     "fcst_src": "nws-api",
     "fcst_time": "09:45 PDT",
-    "fcst_unit": "C"
+    "fcst_unit": "C",
+    "obs": 24,
+    "obs_src": "nws-asos",
+    "obs_time": "13:12 PDT",
+    "obs_unit": "C"
   }
 }
