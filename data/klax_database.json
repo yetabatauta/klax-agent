@@ -722,9 +722,9 @@
     "fcst_src": "nws-api",
     "fcst_time": "09:53 PDT",
     "fcst_unit": "C",
-    "obs": 28,
+    "obs": 21.1,
     "obs_src": "nws-asos",
-    "obs_time": "16:21 PDT",
+    "obs_time": "13:16 PDT",
     "obs_unit": "C"
   },
   "2026-08-19": {
@@ -732,6 +732,10 @@
     "fcst_period": "Today",
     "fcst_src": "nws-api",
     "fcst_time": "09:52 PDT",
-    "fcst_unit": "C"
+    "fcst_unit": "C",
+    "obs": 28,
+    "obs_src": "nws-asos",
+    "obs_time": "13:16 PDT",
+    "obs_unit": "C"
   }
 }
