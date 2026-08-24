@@ -777,9 +777,15 @@
     "fcst_src": "nws-api",
     "fcst_time": "09:46 PDT",
     "fcst_unit": "C",
-    "obs": 29,
+    "obs": 25,
     "obs_src": "nws-asos",
-    "obs_time": "13:11 PDT",
+    "obs_time": "10:01 PDT",
+    "obs_unit": "C"
+  },
+  "2026-08-24": {
+    "obs": 27,
+    "obs_src": "nws-asos",
+    "obs_time": "10:01 PDT",
     "obs_unit": "C"
   }
 }
