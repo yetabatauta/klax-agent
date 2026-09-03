@@ -837,9 +837,9 @@
     "obs_unit": "C"
   },
   "2026-09-02": {
-    "obs": 22.2,
+    "obs": 21.1,
     "obs_src": "nws-asos",
-    "obs_time": "12:19 PDT",
+    "obs_time": "15:01 PDT",
     "obs_unit": "C"
   },
   "2026-09-03": {
