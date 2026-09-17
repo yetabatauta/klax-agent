@@ -921,15 +921,15 @@
     "obs_unit": "C"
   },
   "2026-09-16": {
-    "obs": 22,
+    "obs": 21.1,
     "obs_src": "nws-asos",
-    "obs_time": "12:46 PDT",
+    "obs_time": "15:32 PDT",
     "obs_unit": "C"
   },
   "2026-09-17": {
-    "obs": 24,
+    "obs": 25,
     "obs_src": "nws-asos",
-    "obs_time": "12:46 PDT",
+    "obs_time": "15:32 PDT",
     "obs_unit": "C"
   }
 }
