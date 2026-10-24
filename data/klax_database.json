@@ -1149,9 +1149,9 @@
     "obs_unit": "C"
   },
   "2026-10-24": {
-    "obs": 23,
+    "obs": 24,
     "obs_src": "nws-asos",
-    "obs_time": "11:51 PDT",
+    "obs_time": "15:07 PDT",
     "obs_unit": "C"
   }
 }
