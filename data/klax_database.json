@@ -1321,5 +1321,11 @@
     "obs_src": "nws-asos",
     "obs_time": "13:43 PDT",
     "obs_unit": "C"
+  },
+  "2026-11-22": {
+    "obs": 20,
+    "obs_src": "nws-asos",
+    "obs_time": "13:54 PDT",
+    "obs_unit": "C"
   }
 }
